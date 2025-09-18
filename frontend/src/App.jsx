@@ -4,6 +4,8 @@ import { ProtectedRoute, PublicRoute } from './components/ProtectedRoute';
 import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
+import NotesPages from './pages/NotesPages';    // ✅ Correct import
+import AddNotePage from './pages/AddNotePage';  // ✅ Correct import
 import { authService } from './services/authService';
 import './App.css';
 
@@ -17,10 +19,10 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-          {/* Default route - redirect to dashboard if authenticated, otherwise to login */}
+          {/* Default route */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           
-          {/* Public routes - redirect to dashboard if already authenticated */}
+          {/* Public routes */}
           <Route
             path="/login"
             element={
@@ -38,7 +40,7 @@ function App() {
             }
           />
           
-          {/* Protected routes - require authentication */}
+          {/* Protected routes */}
           <Route
             path="/dashboard"
             element={
@@ -47,8 +49,24 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/notes"
+            element={
+              <ProtectedRoute>
+                <NotesPages />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notes/add"
+            element={
+              <ProtectedRoute>
+                <AddNotePage />
+              </ProtectedRoute>
+            }
+          />
           
-          {/* Catch all route - redirect to dashboard */}
+          {/* Catch all */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </div>

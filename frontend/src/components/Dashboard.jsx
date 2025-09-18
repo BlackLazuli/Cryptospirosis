@@ -91,8 +91,11 @@ const Dashboard = () => {
             <div className="dashboard-actions">
               <div className="action-card">
                 <h4>🗒️ Notes</h4>
-                <p>Manage your personal notes (Coming Soon)</p>
-                <button className="action-button" disabled>
+                <p>Manage your personal notes</p>
+                <button 
+                  className="action-button" 
+                  onClick={() => navigate('/notes')}
+                >
                   View Notes
                 </button>
               </div>
