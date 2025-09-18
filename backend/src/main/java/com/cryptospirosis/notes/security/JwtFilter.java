@@ -28,44 +28,52 @@ public class JwtFilter extends OncePerRequestFilter {
         this.userRepository = userRepository;
     }
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-            throws ServletException, IOException {
-        String header = request.getHeader("Authorization");
+@Override
+protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+        throws ServletException, IOException {
 
-        if (header == null || !header.startsWith("Bearer ")) {
-            chain.doFilter(request, response);
-            return;
-        }
+    String path = request.getRequestURI();
 
-        String token = header.substring(7);
-        try {
-            String email = jwtUtil.extractEmail(token);
-            Optional<UserEntity> userOpt = userRepository.findByEmail(email);
+    // 🔹 Skip JWT validation for public endpoints
+    if (path.startsWith("/api/auth") || path.startsWith("/notes")) {
+        chain.doFilter(request, response);
+        return;
+    }
 
-            if (userOpt.isPresent() && jwtUtil.validateToken(token)) {
-                UserEntity user = userOpt.get();
-                if (!email.equals(user.getEmail())) {
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write("Token is invalid due to email mismatch. Please log in again.");
-                    return;
-                }
+    String header = request.getHeader("Authorization");
+    if (header == null || !header.startsWith("Bearer ")) {
+        chain.doFilter(request, response);
+        return;
+    }
 
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(user.getEmail(), null, Collections.emptyList());
+    String token = header.substring(7);
+    try {
+        String email = jwtUtil.extractEmail(token);
+        Optional<UserEntity> userOpt = userRepository.findByEmail(email);
 
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-            } else {
+        if (userOpt.isPresent() && jwtUtil.validateToken(token)) {
+            UserEntity user = userOpt.get();
+            if (!email.equals(user.getEmail())) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Invalid token. Please log in again.");
+                response.getWriter().write("Token is invalid due to email mismatch. Please log in again.");
                 return;
             }
-        } catch (JwtException e) {
+
+            UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(user.getEmail(), null, Collections.emptyList());
+
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+        } else {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Token has expired or is invalid. Please log in again.");
+            response.getWriter().write("Invalid token. Please log in again.");
             return;
         }
-
-        chain.doFilter(request, response);
+    } catch (JwtException e) {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.getWriter().write("Token has expired or is invalid. Please log in again.");
+        return;
     }
+
+    chain.doFilter(request, response);
+}
 }
