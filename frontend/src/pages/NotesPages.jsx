@@ -4,7 +4,8 @@ import { authService } from '../services/authService';
 
 const NotesPages = () => {
   const [notes, setNotes] = useState([]);
-  const [editingNote, setEditingNote] = useState(null); // 🔹 holds note being edited
+  const [searchTerm, setSearchTerm] = useState(""); // 🔍 search bar input
+  const [editingNote, setEditingNote] = useState(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const navigate = useNavigate();
@@ -58,7 +59,7 @@ const NotesPages = () => {
       if (res.ok) {
         const updatedNote = { ...editingNote, title, body };
         setNotes(notes.map((n) => (n.notesId === updatedNote.notesId ? updatedNote : n)));
-        setEditingNote(null); // close modal
+        setEditingNote(null);
       } else {
         console.error("Failed to update note");
       }
@@ -67,6 +68,13 @@ const NotesPages = () => {
     }
   };
 
+  // 🔍 Filter notes based on search
+  const filteredNotes = notes.filter(
+    (note) =>
+      note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.body.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-8">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8 animate-fadeIn">
@@ -74,7 +82,15 @@ const NotesPages = () => {
           Your Notes
         </h2>
 
-        <div className="flex justify-end mb-6">
+        {/* 🔍 SEARCH BAR */}
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+          <input
+            type="text"
+            placeholder="Search notes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full sm:w-2/3 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-400"
+          />
           <button
             onClick={() => navigate('/notes/add')}
             className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-5 py-2 rounded-lg shadow hover:scale-105 transition-transform"
@@ -83,13 +99,15 @@ const NotesPages = () => {
           </button>
         </div>
 
-        {notes.length === 0 ? (
+        {filteredNotes.length === 0 ? (
           <p className="text-gray-600 text-center italic">
-            No notes found. Add your first note!
+            {notes.length === 0
+              ? "No notes found. Add your first note!"
+              : "No matching notes found."}
           </p>
         ) : (
           <ul className="space-y-6">
-            {notes.map(note => (
+            {filteredNotes.map(note => (
               <li
                 key={note.notesId}
                 className="bg-gray-50 p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
