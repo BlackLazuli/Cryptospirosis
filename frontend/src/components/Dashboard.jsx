@@ -6,7 +6,9 @@ import './Dashboard.css';
 const Dashboard = () => {
   const [wallets, setWallets] = useState([]);
   const [selectedWallet, setSelectedWallet] = useState('');
+  const [walletApi, setWalletApi] = useState(null);
   const [walletAddress, setWalletAddress] = useState('');
+  const [walletBalance, setWalletBalance] = useState(0);
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [authState, setAuthState] = useState(authService.getAuthState());
@@ -22,15 +24,12 @@ const Dashboard = () => {
   // Subscribe to auth state
   useEffect(() => {
     const unsubscribe = authService.subscribe(setAuthState);
-
     if (!authState.isAuthenticated && !authState.loading) {
       authService.initialize();
     }
-
     if (!authState.loading && !authState.isAuthenticated) {
       navigate('/login');
     }
-
     return unsubscribe;
   }, [navigate, authState.isAuthenticated, authState.loading]);
 
@@ -39,18 +38,19 @@ const Dashboard = () => {
     navigate('/login');
   };
 
-  // Connect wallet function
+  // Connect wallet
   const handleConnectWallet = async () => {
     try {
       if (!selectedWallet) return alert("Please select a wallet first!");
+      const api = await window.cardano[selectedWallet].enable();
+      setWalletApi(api);
 
-      const walletApi = await window.cardano[selectedWallet].enable();
-      console.log("Wallet enabled:", walletApi);
+      const address = await api.getChangeAddress();
+      setWalletAddress(address);
 
-      // Get the main wallet address
-      const changeAddress = await walletApi.getChangeAddress();
-      setWalletAddress(changeAddress);
-      console.log("Wallet address:", changeAddress);
+      // Get wallet balance in ADA
+      const rawBalance = await api.getBalance(); // returns in lovelace
+      setWalletBalance(Number(rawBalance) / 1_000_000);
 
       alert(`${selectedWallet} wallet connected!`);
     } catch (error) {
@@ -59,21 +59,22 @@ const Dashboard = () => {
     }
   };
 
-  // Handle input changes
   const handleRecipientChange = (e) => setRecipient(e.target.value);
   const handleAmountChange = (e) => setAmount(e.target.value);
 
-  // Placeholder send transaction function
+  // Send ADA
   const handleSendADA = async () => {
     try {
       if (!walletAddress) return alert("Connect a wallet first!");
       if (!recipient) return alert("Enter a recipient address!");
       if (!amount) return alert("Enter an amount to send!");
+      if (walletBalance <= 0) return alert("Your wallet has no ADA.");
+      if (Number(amount) > walletBalance) return alert("Insufficient funds.");
 
       console.log(`Sending ${amount} ADA from ${walletAddress} to ${recipient}`);
-      alert(`Transaction sent! (Check console for details)`);
+      alert("Transaction sent! (Check console for details)");
 
-      // Actual transaction logic will go here in next steps
+      // TODO: Implement actual transaction sending logic here
     } catch (error) {
       console.error("Transaction failed:", error);
       alert("Transaction failed. See console for details.");
@@ -82,16 +83,10 @@ const Dashboard = () => {
 
   if (authState.loading) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-          fontSize: '18px',
-          color: '#666',
-        }}
-      >
+      <div style={{
+        display: 'flex', justifyContent: 'center',
+        alignItems: 'center', height: '100vh', fontSize: '18px', color: '#666'
+      }}>
         Loading...
       </div>
     );
@@ -105,12 +100,8 @@ const Dashboard = () => {
         <div className="header-content">
           <h1>Cryptospirosis Notes</h1>
           <div className="header-actions">
-            <span className="user-greeting">
-              Welcome, {authState.user?.username || 'User'}!
-            </span>
-            <button onClick={handleLogout} className="logout-button">
-              Logout
-            </button>
+            <span className="user-greeting"> Welcome, {authState.user?.username || 'User'}! </span>
+            <button onClick={handleLogout} className="logout-button"> Logout </button>
           </div>
         </div>
       </header>
@@ -119,24 +110,13 @@ const Dashboard = () => {
         <div className="welcome-section">
           <div className="welcome-card">
             <h2>Welcome to your Dashboard</h2>
-            <p>
-              Hello <strong>{authState.user?.username}</strong>, you have successfully logged in!
-            </p>
+            <p>Hello <strong>{authState.user?.username}</strong>, you have successfully logged in!</p>
 
             <div className="user-info">
               <h3>Your Account Information:</h3>
-              <div className="info-item">
-                <span className="info-label">Username:</span>
-                <span className="info-value">{authState.user?.username}</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">Email:</span>
-                <span className="info-value">{authState.user?.email}</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">User ID:</span>
-                <span className="info-value">{authState.user?.userId}</span>
-              </div>
+              <div className="info-item"><span className="info-label">Username:</span> <span className="info-value">{authState.user?.username}</span></div>
+              <div className="info-item"><span className="info-label">Email:</span> <span className="info-value">{authState.user?.email}</span></div>
+              <div className="info-item"><span className="info-label">User ID:</span> <span className="info-value">{authState.user?.userId}</span></div>
             </div>
 
             <div className="dashboard-actions">
@@ -144,89 +124,50 @@ const Dashboard = () => {
               <div className="action-card">
                 <h4>🗒️ Notes</h4>
                 <p>Manage your personal notes</p>
-                <button
-                  className="action-button"
-                  onClick={() => navigate('/notes')}
-                >
-                  View Notes
-                </button>
+                <button className="action-button" onClick={() => navigate('/notes')}> View Notes </button>
               </div>
 
               {/* Profile Card */}
               <div className="action-card">
                 <h4>👤 Profile</h4>
                 <p>Update your profile information (Coming Soon)</p>
-                <button className="action-button" disabled>
-                  Edit Profile
-                </button>
+                <button className="action-button" disabled> Edit Profile </button>
               </div>
 
               {/* Connect Wallet Card */}
               <div className="action-card">
                 <h4>💼 Connect Wallet</h4>
                 <p>Link your crypto wallet</p>
-
                 <div style={{ marginBottom: '10px' }}>
-                  <select
-                    value={selectedWallet}
-                    onChange={(e) => setSelectedWallet(e.target.value)}
-                  >
+                  <select value={selectedWallet} onChange={(e) => setSelectedWallet(e.target.value)}>
                     <option value="">Select Wallet</option>
-                    {wallets.length > 0 &&
-                      wallets.map((wallet) => (
-                        <option key={wallet} value={wallet}>
-                          {wallet}
-                        </option>
-                      ))}
+                    {wallets.map(wallet => <option key={wallet} value={wallet}>{wallet}</option>)}
                   </select>
                 </div>
-
-                <button
-                  className="action-button"
-                  onClick={handleConnectWallet}
-                >
-                  Connect Wallet
-                </button>
-
+                <button className="action-button" onClick={handleConnectWallet}> Connect Wallet </button>
                 {walletAddress && (
-                  <p style={{ marginTop: '10px' }}>
-                    <strong>Connected Wallet:</strong> {walletAddress}
-                  </p>
+                  <>
+                    <p style={{ marginTop: '10px' }}><strong>Connected Wallet:</strong> {walletAddress}</p>
+                    <p><strong>Balance:</strong> {walletBalance} ADA</p>
+                  </>
                 )}
               </div>
 
               {/* Send Transaction Card */}
               <div className="action-card">
                 <h4>💸 Send ADA</h4>
-
                 <label>Recipient Address:</label>
-                <input
-                  type="text"
-                  placeholder="Wallet address"
-                  value={recipient}
-                  onChange={handleRecipientChange}
-                />
-
+                <input type="text" placeholder="Wallet address" value={recipient} onChange={handleRecipientChange} />
                 <label>Amount:</label>
-                <input
-                  type="number"
-                  placeholder="Amount"
-                  value={amount}
-                  onChange={handleAmountChange}
-                />
-
-                <button className="action-button" onClick={handleSendADA}>
-                  Send ADA
-                </button>
+                <input type="number" placeholder="Amount" value={amount} onChange={handleAmountChange} />
+                <button className="action-button" onClick={handleSendADA}> Send ADA </button>
               </div>
 
               {/* Settings Card */}
               <div className="action-card">
                 <h4>⚙️ Settings</h4>
                 <p>Customize your experience (Coming Soon)</p>
-                <button className="action-button" disabled>
-                  Settings
-                </button>
+                <button className="action-button" disabled> Settings </button>
               </div>
             </div>
           </div>
