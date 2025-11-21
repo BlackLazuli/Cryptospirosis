@@ -4,6 +4,8 @@
   "private": true,
   "dependencies": {
     "@blaze-cardano/sdk": "^0.2.44",
+    "@blockfrost/blockfrost-js": "^6.0.0",
+    "@emurgo/cardano-serialization-lib-browser": "^15.0.3",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
