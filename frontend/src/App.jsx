@@ -4,8 +4,9 @@ import { ProtectedRoute, PublicRoute } from './components/ProtectedRoute';
 import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
-import NotesPages from './pages/NotesPages';    // ✅ Correct import
-import AddNotePage from './pages/AddNotePage';  // ✅ Correct import
+import NotesPages from './pages/NotesPages';    
+import AddNotePage from './pages/AddNotePage';  
+import EditNotePage from './pages/EditNotePage';  // ✅ Import edit page
 import { authService } from './services/authService';
 import './App.css';
 
@@ -62,6 +63,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <AddNotePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notes/edit/:id"
+            element={
+              <ProtectedRoute>
+                <EditNotePage />
               </ProtectedRoute>
             }
           />
