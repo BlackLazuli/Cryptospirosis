@@ -4,19 +4,29 @@ import { authService } from '../services/authService';
 import './Dashboard.css';
 
 const Dashboard = () => {
+  const [wallets, setWallets] = useState([]);
+  const [selectedWallet, setSelectedWallet] = useState('');
+  const [walletAddress, setWalletAddress] = useState('');
+  const [recipient, setRecipient] = useState('');
+  const [amount, setAmount] = useState('');
   const [authState, setAuthState] = useState(authService.getAuthState());
   const navigate = useNavigate();
 
+  // Load installed wallets
   useEffect(() => {
-    // Subscribe to auth state changes
+    if (window.cardano) {
+      setWallets(Object.keys(window.cardano));
+    }
+  }, []);
+
+  // Subscribe to auth state
+  useEffect(() => {
     const unsubscribe = authService.subscribe(setAuthState);
-    
-    // Initialize auth if not already done
+
     if (!authState.isAuthenticated && !authState.loading) {
       authService.initialize();
     }
 
-    // Redirect to login if not authenticated
     if (!authState.loading && !authState.isAuthenticated) {
       navigate('/login');
     }
@@ -29,26 +39,65 @@ const Dashboard = () => {
     navigate('/login');
   };
 
-  // Show loading while checking authentication
+  // Connect wallet function
+  const handleConnectWallet = async () => {
+    try {
+      if (!selectedWallet) return alert("Please select a wallet first!");
+
+      const walletApi = await window.cardano[selectedWallet].enable();
+      console.log("Wallet enabled:", walletApi);
+
+      // Get the main wallet address
+      const changeAddress = await walletApi.getChangeAddress();
+      setWalletAddress(changeAddress);
+      console.log("Wallet address:", changeAddress);
+
+      alert(`${selectedWallet} wallet connected!`);
+    } catch (error) {
+      console.error("Failed to connect wallet:", error);
+      alert("Failed to connect wallet. Make sure it is installed and unlocked.");
+    }
+  };
+
+  // Handle input changes
+  const handleRecipientChange = (e) => setRecipient(e.target.value);
+  const handleAmountChange = (e) => setAmount(e.target.value);
+
+  // Placeholder send transaction function
+  const handleSendADA = async () => {
+    try {
+      if (!walletAddress) return alert("Connect a wallet first!");
+      if (!recipient) return alert("Enter a recipient address!");
+      if (!amount) return alert("Enter an amount to send!");
+
+      console.log(`Sending ${amount} ADA from ${walletAddress} to ${recipient}`);
+      alert(`Transaction sent! (Check console for details)`);
+
+      // Actual transaction logic will go here in next steps
+    } catch (error) {
+      console.error("Transaction failed:", error);
+      alert("Transaction failed. See console for details.");
+    }
+  };
+
   if (authState.loading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        fontSize: '18px',
-        color: '#666'
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          fontSize: '18px',
+          color: '#666',
+        }}
+      >
         Loading...
       </div>
     );
   }
 
-  // Don't render if not authenticated
-  if (!authState.isAuthenticated) {
-    return null;
-  }
+  if (!authState.isAuthenticated) return null;
 
   return (
     <div className="dashboard-container">
@@ -70,8 +119,10 @@ const Dashboard = () => {
         <div className="welcome-section">
           <div className="welcome-card">
             <h2>Welcome to your Dashboard</h2>
-            <p>Hello <strong>{authState.user?.username}</strong>, you have successfully logged in!</p>
-            
+            <p>
+              Hello <strong>{authState.user?.username}</strong>, you have successfully logged in!
+            </p>
+
             <div className="user-info">
               <h3>Your Account Information:</h3>
               <div className="info-item">
@@ -89,17 +140,19 @@ const Dashboard = () => {
             </div>
 
             <div className="dashboard-actions">
+              {/* Notes Card */}
               <div className="action-card">
                 <h4>🗒️ Notes</h4>
                 <p>Manage your personal notes</p>
-                <button 
-                  className="action-button" 
+                <button
+                  className="action-button"
                   onClick={() => navigate('/notes')}
                 >
                   View Notes
                 </button>
               </div>
-              
+
+              {/* Profile Card */}
               <div className="action-card">
                 <h4>👤 Profile</h4>
                 <p>Update your profile information (Coming Soon)</p>
@@ -107,7 +160,67 @@ const Dashboard = () => {
                   Edit Profile
                 </button>
               </div>
-              
+
+              {/* Connect Wallet Card */}
+              <div className="action-card">
+                <h4>💼 Connect Wallet</h4>
+                <p>Link your crypto wallet</p>
+
+                <div style={{ marginBottom: '10px' }}>
+                  <select
+                    value={selectedWallet}
+                    onChange={(e) => setSelectedWallet(e.target.value)}
+                  >
+                    <option value="">Select Wallet</option>
+                    {wallets.length > 0 &&
+                      wallets.map((wallet) => (
+                        <option key={wallet} value={wallet}>
+                          {wallet}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <button
+                  className="action-button"
+                  onClick={handleConnectWallet}
+                >
+                  Connect Wallet
+                </button>
+
+                {walletAddress && (
+                  <p style={{ marginTop: '10px' }}>
+                    <strong>Connected Wallet:</strong> {walletAddress}
+                  </p>
+                )}
+              </div>
+
+              {/* Send Transaction Card */}
+              <div className="action-card">
+                <h4>💸 Send ADA</h4>
+
+                <label>Recipient Address:</label>
+                <input
+                  type="text"
+                  placeholder="Wallet address"
+                  value={recipient}
+                  onChange={handleRecipientChange}
+                />
+
+                <label>Amount:</label>
+                <input
+                  type="number"
+                  placeholder="Amount"
+                  value={amount}
+                  onChange={handleAmountChange}
+                />
+
+                <button className="action-button" onClick={handleSendADA}>
+                  Send ADA
+                </button>
+              </div>
+
+              {/* Settings Card */}
               <div className="action-card">
                 <h4>⚙️ Settings</h4>
                 <p>Customize your experience (Coming Soon)</p>
