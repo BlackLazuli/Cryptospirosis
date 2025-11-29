@@ -6,6 +6,8 @@ const EditNotePage = () => {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [payeeAddress, setPayeeAddress] = useState("");
+  const [payeeAmount, setPayeeAmount] = useState("");
 
   useEffect(() => {
     fetch(`http://localhost:8080/api/notes/${id}`)
@@ -13,6 +15,8 @@ const EditNotePage = () => {
       .then((data) => {
         setTitle(data.title);
         setBody(data.body);
+        setPayeeAddress(data.payeeAddress || "");
+        setPayeeAmount(data.payeeAmount ?? "");
       })
       .catch((err) => console.error(err));
   }, [id]);
@@ -24,7 +28,12 @@ const EditNotePage = () => {
       const res = await fetch(`http://localhost:8080/api/notes/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, body }),
+        body: JSON.stringify({
+          title,
+          body,
+          payeeAddress: payeeAddress.trim() || null,
+          payeeAmount: payeeAmount ? Number(payeeAmount) : null,
+        }),
       });
 
       if (res.ok) {
@@ -63,6 +72,28 @@ const EditNotePage = () => {
               onChange={(e) => setBody(e.target.value)}
               required
               rows="5"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Payee Wallet Address (optional)</label>
+            <textarea
+              value={payeeAddress}
+              onChange={(e) => setPayeeAddress(e.target.value)}
+              rows="2"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Suggested ADA Amount (optional)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.000001"
+              value={payeeAmount}
+              onChange={(e) => setPayeeAmount(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-400"
             />
           </div>

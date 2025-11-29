@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Address,
   BigNum,
@@ -50,7 +50,9 @@ const TransactionPage = () => {
   const [isBusy, setIsBusy] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [summaryDetails, setSummaryDetails] = useState(null);
+  const [prefillMeta, setPrefillMeta] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const unsubscribe = authService.subscribe(setAuthState);
@@ -74,6 +76,16 @@ const TransactionPage = () => {
 
     setWallets(discoverWallets());
   }, []);
+
+  useEffect(() => {
+    if (location.state?.fromNote) {
+      const prefill = location.state.fromNote;
+      setRecipient(prefill.recipient || '');
+      setAmount(prefill.amount != null ? String(prefill.amount) : '');
+      setPrefillMeta(prefill);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.pathname, location.state, navigate]);
 
   const availableWallets = useMemo(
     () => wallets.map((walletId) => ({ id: walletId, label: sanitizeWalletLabel(walletId) })),
@@ -262,6 +274,45 @@ const TransactionPage = () => {
             </p>
 
             <div className="transaction-layout">
+              {prefillMeta && (
+                <div
+                  className="transaction-card"
+                  style={{ backgroundColor: '#f0f8ff', border: '1px solid #bee3f8' }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      gap: '12px',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: '220px' }}>
+                      <h4>Prefilled from '{prefillMeta.title || 'Note'}'</h4>
+                      <p style={{ marginBottom: '8px' }}>Review the address and amount before sending.</p>
+                      <p className="transaction-label" style={{ marginBottom: 0 }}>Recipient</p>
+                      <div className="wallet-address" style={{ marginBottom: '8px' }}>
+                        {prefillMeta.recipient}
+                      </div>
+                      <p className="transaction-label" style={{ marginBottom: 0 }}>Amount</p>
+                      <p style={{ fontWeight: 600 }}>{prefillMeta.amount} ADA</p>
+                    </div>
+                    <button
+                      className="action-button"
+                      style={{ backgroundColor: '#e53e3e' }}
+                      onClick={() => {
+                        setPrefillMeta(null);
+                        setRecipient('');
+                        setAmount('');
+                      }}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="transaction-grid">
                 <div className="transaction-card">
                   <h4>Connect a Wallet</h4>

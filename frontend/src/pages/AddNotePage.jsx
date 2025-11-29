@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
+import '../components/Dashboard.css';
+import './AddNotePage.css';
 
 const AddNotePage = () => {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [payeeAddress, setPayeeAddress] = useState('');
+  const [payeeAmount, setPayeeAmount] = useState('');
   const navigate = useNavigate();
   const user = authService.getAuthState().user;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    const payload = { title, body };
+ 
+    const payload = {
+      title,
+      body,
+      payeeAddress: payeeAddress.trim() || null,
+      payeeAmount: payeeAmount ? Number(payeeAmount) : null,
+    };
     console.log("📤 Sending payload to backend:", payload);
     console.log("➡️ URL:", `http://localhost:8080/notes/user/${user.userId}`);
 
@@ -38,60 +47,91 @@ const AddNotePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f5f7fa] to-[#c3cfe2] flex items-center justify-center px-4">
-      <div className="bg-white shadow-xl rounded-2xl w-full max-w-2xl p-8 animate-fadeIn">
-        <h2 className="text-3xl font-semibold text-gray-800 text-center mb-6">
-          Add New Note
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title */}
-          <div>
-            <label className="block text-gray-700 font-medium mb-2">
-              Title
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:outline-none transition"
-              placeholder="Enter note title"
-            />
-          </div>
-
-          {/* Body */}
-          <div>
-            <label className="block text-gray-700 font-medium mb-2">
-              Body
-            </label>
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              required
-              rows="6"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:outline-none transition resize-none"
-              placeholder="Write your note here..."
-            />
-          </div>
-
-          {/* Buttons */}
-          <div className="flex justify-between items-center">
-            <button
-              type="button"
-              onClick={() => navigate('/notes')}
-              className="px-5 py-2 rounded-lg border border-gray-300 text-gray-600 font-medium hover:bg-gray-100 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white font-semibold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition"
-            >
-              Save Note
+    <div className="dashboard-container">
+      <header className="dashboard-header">
+        <div className="header-content">
+          <h1>Cryptospirosis Notes</h1>
+          <div className="header-actions">
+            <span className="user-greeting">Create something great, {user?.username || 'friend'}.</span>
+            <button className="action-button" onClick={() => navigate('/notes')}>
+              Back to Notes
             </button>
           </div>
-        </form>
-      </div>
+        </div>
+      </header>
+
+      <main className="dashboard-main">
+        <div className="welcome-section">
+          <div className="welcome-card note-form-shell">
+            <div className="note-form-header">
+              <div>
+                <p className="notes-eyebrow">New Entry</p>
+                <h2>Add Note</h2>
+              </div>
+              <span className="note-form-hint">Fields marked optional can be skipped.</span>
+            </div>
+
+            <form onSubmit={handleSubmit} className="note-form">
+              <label>
+                <span>Title</span>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                  placeholder="Enter note title"
+                />
+              </label>
+
+              <label>
+                <span>Body</span>
+                <textarea
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  rows="6"
+                  required
+                  placeholder="Write your note here..."
+                />
+              </label>
+
+              <label>
+                <span>Recipient Wallet Address</span>
+                <textarea
+                  value={payeeAddress}
+                  onChange={(e) => setPayeeAddress(e.target.value)}
+                  rows="3"
+                  placeholder="addr..."
+                />
+              </label>
+
+              <label>
+                <span>Suggested ADA Amount</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.000001"
+                  value={payeeAmount}
+                  onChange={(e) => setPayeeAmount(e.target.value)}
+                  placeholder="0.00"
+                />
+              </label>
+
+              <div className="note-form__actions">
+                <button type="button" className="notes-btn ghost" onClick={() => navigate('/notes')}>
+                  Cancel
+                </button>
+                <button type="submit" className="notes-btn primary">
+                  💾 Save Note
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+
+      <footer className="dashboard-footer">
+        <p>&copy; 2025 Cryptospirosis Notes. All rights reserved.</p>
+      </footer>
     </div>
   );
 };

@@ -1,0 +1,93 @@
+.note-detail-shell {
+  padding: 34px;
+  width: 100%;
+  max-width: 760px;
+}
+
+.note-detail {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid rgba(118, 75, 162, 0.12);
+  box-shadow: 0 20px 35px rgba(92, 71, 255, 0.12);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.note-detail__meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #8a8fb2;
+}
+
+.note-detail__body {
+  line-height: 1.6;
+  color: #3f4160;
+  margin: 0;
+}
+
+.note-detail__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.note-detail__label {
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: #7b81a3;
+  margin-bottom: 6px;
+}
+
+.note-detail__value {
+  background: #f7f5ff;
+  border-radius: 10px;
+  border: 1px solid rgba(118, 75, 162, 0.18);
+  padding: 12px 14px;
+  color: #2f3153;
+  font-family: 'Courier New', Courier, monospace;
+  word-break: break-all;
+}
+
+.note-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.note-detail__placeholder {
+  padding: 60px 12px;
+  text-align: center;
+  color: #6f7393;
+}
+
+.note-detail__placeholder.error {
+  color: #c53030;
+}
+
+.notes-btn.secondary {
+  background: linear-gradient(135deg, #4c6ef5 0%, #805ad5 100%);
+}
+
+.notes-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .note-detail-shell {
+    padding: 26px 18px;
+  }
+
+  .note-detail {
+    padding: 22px;
+  }
+
+  .note-detail__actions {
+    flex-direction: column;
+  }
+}

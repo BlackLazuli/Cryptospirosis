@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
+import '../components/Dashboard.css';
+import './NotesPages.css';
 
 const NotesPages = () => {
   const [notes, setNotes] = useState([]);
@@ -8,6 +10,8 @@ const NotesPages = () => {
   const [editingNote, setEditingNote] = useState(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [payeeAddress, setPayeeAddress] = useState("");
+  const [payeeAmount, setPayeeAmount] = useState("");
   const navigate = useNavigate();
   const user = authService.getAuthState().user;
 
@@ -44,6 +48,8 @@ const NotesPages = () => {
     setEditingNote(note);
     setTitle(note.title);
     setBody(note.body);
+    setPayeeAddress(note.payeeAddress || "");
+    setPayeeAmount(note.payeeAmount ?? "");
   };
 
   // 💾 SAVE EDIT
@@ -53,13 +59,26 @@ const NotesPages = () => {
       const res = await fetch(`http://localhost:8080/api/notes/${editingNote.notesId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, body }),
+        body: JSON.stringify({
+          title,
+          body,
+          payeeAddress: payeeAddress.trim() || null,
+          payeeAmount: payeeAmount ? Number(payeeAmount) : null,
+        }),
       });
 
       if (res.ok) {
-        const updatedNote = { ...editingNote, title, body };
+        const updatedNote = {
+          ...editingNote,
+          title,
+          body,
+          payeeAddress: payeeAddress.trim() || null,
+          payeeAmount: payeeAmount ? Number(payeeAmount) : null,
+        };
         setNotes(notes.map((n) => (n.notesId === updatedNote.notesId ? updatedNote : n)));
         setEditingNote(null);
+        setPayeeAddress("");
+        setPayeeAmount("");
       } else {
         console.error("Failed to update note");
       }
@@ -76,115 +95,171 @@ const NotesPages = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8 animate-fadeIn">
-        <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-          Your Notes
-        </h2>
+    <div className="dashboard-container">
+          <header className="dashboard-header">
+            <div className="header-content">
+              <h1>Cryptospirosis Notes</h1>
+              <div className="header-actions">
+                <span className="user-greeting">Stay organized, {user?.username || 'friend'}.</span>
+                <button className="action-button" onClick={() => navigate('/dashboard')}>
+                  Back to Dashboard
+                </button>
+              </div>
+            </div>
+          </header>
 
-        {/* 🔍 SEARCH BAR */}
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-          <input
-            type="text"
-            placeholder="Search notes..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:w-2/3 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-400"
-          />
-          <button
-            onClick={() => navigate('/notes/add')}
-            className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-5 py-2 rounded-lg shadow hover:scale-105 transition-transform"
-          >
-            ➕ Add Note
-          </button>
-        </div>
-
-        {filteredNotes.length === 0 ? (
-          <p className="text-gray-600 text-center italic">
-            {notes.length === 0
-              ? "No notes found. Add your first note!"
-              : "No matching notes found."}
-          </p>
-        ) : (
-          <ul className="space-y-6">
-            {filteredNotes.map(note => (
-              <li
-                key={note.notesId}
-                className="bg-gray-50 p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
-              >
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  {note.title}
-                </h3>
-                <p className="text-gray-700 mb-3">{note.body}</p>
-                <small className="block text-gray-500 mb-4">
-                  Created At: {new Date(note.createdAt).toLocaleString()}
-                </small>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => openEditModal(note)}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition"
-                  >
-                    ✏️ Update
-                  </button>
-                  <button
-                    onClick={() => handleDelete(note.notesId)}
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-600 transition"
-                  >
-                    🗑 Delete
+          <main className="dashboard-main">
+            <div className="welcome-section">
+              <div className="welcome-card notes-shell">
+                <div className="notes-heading">
+                  <div>
+                    <p className="notes-eyebrow">Workspace</p>
+                    <h2>Your Notes</h2>
+                  </div>
+                  <button className="action-button" onClick={() => navigate('/notes/add')}>
+                    ➕ Add Note
                   </button>
                 </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
 
-      {/* 🔹 Modal */}
-      {editingNote && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Edit Note</h2>
-            <form onSubmit={handleUpdate} className="space-y-4">
-              <div>
-                <label className="block text-gray-700 mb-2">Title</label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-400"
-                  required
-                />
+                <div className="notes-toolbar">
+                  <input
+                    type="text"
+                    placeholder="Search notes..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="notes-search"
+                  />
+                  <div className="notes-meta">
+                    <span>{filteredNotes.length}</span> showing
+                  </div>
+                </div>
+
+                {filteredNotes.length === 0 ? (
+                  <div className="notes-empty">
+                    {notes.length === 0
+                      ? 'No notes yet. Tap "Add Note" to create your first one.'
+                      : 'No notes match your search. Try another keyword.'}
+                  </div>
+                ) : (
+                  <ul className="notes-list">
+                    {filteredNotes.map((note) => (
+                      <li key={note.notesId} className="note-card">
+                        <div className="note-card__content">
+                          <div className="note-card__header">
+                            <h3>{note.title}</h3>
+                            <time>{new Date(note.createdAt).toLocaleString()}</time>
+                          </div>
+                          <p className="note-card__body">{note.body}</p>
+
+                          {(note.payeeAddress || note.payeeAmount) && (
+                            <div className="note-card__payment">
+                              <div className="note-card__payment-header">Linked Payment</div>
+                              {note.payeeAddress && (
+                                <p>
+                                  <span>Address:</span> {note.payeeAddress}
+                                </p>
+                              )}
+                              {note.payeeAmount != null && (
+                                <p>
+                                  <span>Amount:</span> {note.payeeAmount} ADA
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="note-card__actions">
+                          <button
+                            className="notes-btn secondary"
+                            onClick={() => navigate(`/notes/view/${note.notesId}`)}
+                          >
+                            👁 View
+                          </button>
+                          <button className="notes-btn primary" onClick={() => openEditModal(note)}>
+                            ✏️ Update
+                          </button>
+                          <button className="notes-btn danger" onClick={() => handleDelete(note.notesId)}>
+                            🗑 Delete
+                          </button>
+                          {note.payeeAddress && note.payeeAmount != null && (
+                            <button
+                              className="notes-btn accent"
+                              onClick={() =>
+                                navigate('/transactions', {
+                                  state: {
+                                    fromNote: {
+                                      title: note.title,
+                                      recipient: note.payeeAddress,
+                                      amount: note.payeeAmount,
+                                    },
+                                  },
+                                })
+                              }
+                            >
+                              💸 Send ADA
+                            </button>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-              <div>
-                <label className="block text-gray-700 mb-2">Body</label>
-                <textarea
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  rows="5"
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-400"
-                  required
-                />
+            </div>
+          </main>
+
+          <footer className="dashboard-footer">
+            <p>&copy; 2025 Cryptospirosis Notes. All rights reserved.</p>
+          </footer>
+
+          {editingNote && (
+            <div className="notes-modal" role="dialog" aria-modal="true">
+              <div className="notes-modal__backdrop" onClick={() => setEditingNote(null)} />
+              <div className="notes-modal__content">
+                <h2>Edit Note</h2>
+                <form onSubmit={handleUpdate}>
+                  <label>
+                    <span>Title</span>
+                    <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required />
+                  </label>
+                  <label>
+                    <span>Body</span>
+                    <textarea value={body} onChange={(e) => setBody(e.target.value)} rows="4" required />
+                  </label>
+                  <label>
+                    <span>Payee Wallet Address (optional)</span>
+                    <textarea value={payeeAddress} onChange={(e) => setPayeeAddress(e.target.value)} rows="2" />
+                  </label>
+                  <label>
+                    <span>Suggested ADA Amount (optional)</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.000001"
+                      value={payeeAmount}
+                      onChange={(e) => setPayeeAmount(e.target.value)}
+                    />
+                  </label>
+                  <div className="notes-modal__actions">
+                    <button
+                      type="button"
+                      className="notes-btn ghost"
+                      onClick={() => {
+                        setEditingNote(null);
+                        setPayeeAddress('');
+                        setPayeeAmount('');
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="notes-btn primary">
+                      💾 Save Changes
+                    </button>
+                  </div>
+                </form>
               </div>
-              <div className="flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setEditingNote(null)}
-                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-500 text-white rounded-lg shadow hover:bg-indigo-600"
-                >
-                  💾 Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
+          )}
     </div>
   );
 };
