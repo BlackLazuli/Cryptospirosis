@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard';
 import NotesPages from './pages/NotesPages';    
 import AddNotePage from './pages/AddNotePage';  
 import EditNotePage from './pages/EditNotePage';  // ✅ Import edit page
+import ViewNotePage from './pages/ViewNotePage';
 import TransactionPage from './pages/Transaction';
 import { authService } from './services/authService';
 import './App.css';
@@ -72,6 +73,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <EditNotePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notes/view/:id"
+            element={
+              <ProtectedRoute>
+                <ViewNotePage />
               </ProtectedRoute>
             }
           />

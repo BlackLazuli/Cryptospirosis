@@ -1,13 +1,14 @@
 package com.cryptospirosis.notes.service;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+
 import com.cryptospirosis.notes.entity.NoteEntity;
 import com.cryptospirosis.notes.entity.UserEntity;
 import com.cryptospirosis.notes.repository.NoteRepository;
 import com.cryptospirosis.notes.repository.UserRepository;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class NoteService {
@@ -47,6 +48,8 @@ public class NoteService {
                 .map(note -> {
                     note.setTitle(updatedNote.getTitle());
                     note.setBody(updatedNote.getBody());
+                    note.setPayeeAddress(updatedNote.getPayeeAddress());
+                    note.setPayeeAmount(updatedNote.getPayeeAmount());
                     return noteRepository.save(note);
                 })
                 .orElseThrow(() -> new RuntimeException("Note not found"));
