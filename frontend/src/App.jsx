@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard';
 import NotesPages from './pages/NotesPages';    
 import AddNotePage from './pages/AddNotePage';  
 import EditNotePage from './pages/EditNotePage';  // ✅ Import edit page
+import TransactionPage from './pages/Transaction';
 import { authService } from './services/authService';
 import './App.css';
 
@@ -71,6 +72,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <EditNotePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/transactions"
+            element={
+              <ProtectedRoute>
+                <TransactionPage />
               </ProtectedRoute>
             }
           />
