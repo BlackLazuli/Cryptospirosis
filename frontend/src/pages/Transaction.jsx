@@ -257,6 +257,14 @@ const TransactionPage = () => {
             <button onClick={() => navigate('/dashboard')} className="logout-button">
               Back to Dashboard
             </button>
+
+            <button
+  onClick={() => navigate('/transaction-history')}
+  className="logout-button"
+>
+  History
+</button>
+
             <button onClick={handleLogout} className="logout-button">
               Logout
             </button>
