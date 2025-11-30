@@ -17,6 +17,8 @@ import { Buffer } from 'buffer';
 import { authService } from '../services/authService';
 import '../components/Dashboard.css';
 
+
+
 const BLOCKFROST_PROJECT_ID = 'previewzmMNAoEknB2pGpjPqEJa2pI3rwdHAeua';
 const NETWORK = 'preview';
 const WALLET_WHITELIST = [
@@ -53,6 +55,15 @@ const TransactionPage = () => {
   const [prefillMeta, setPrefillMeta] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const [walletBalance, setWalletBalance] = useState(0);
+
+  useEffect(() => {
+  const lastTx = localStorage.getItem("lastTransaction");
+  if (lastTx) {
+    setSummaryDetails(JSON.parse(lastTx));
+    setShowSummary(true);
+  }
+}, []);
 
   useEffect(() => {
     const unsubscribe = authService.subscribe(setAuthState);
@@ -113,12 +124,17 @@ const TransactionPage = () => {
       setStatus({ type: 'info', message: 'Connecting to wallet…' });
 
       const api = await window.cardano[selectedWallet].enable();
+      const balanceHex = await api.getBalance();
+      const value = Value.from_bytes(Buffer.from(balanceHex, 'hex'));
+      const lovelace = value.coin();
+      const ada = Number(lovelace.to_str()) / 1_000_000;
+      setWalletBalance(ada);
+      setWalletApi(api);
       const changeAddressHex = await api.getChangeAddress();
       const displayAddress = toBech32(changeAddressHex);
-
-      setWalletApi(api);
       setWalletAddress(displayAddress);
       setStatus({ type: 'success', message: `${sanitizeWalletLabel(selectedWallet)} connected.` });
+
     } catch (error) {
       console.error('Failed to connect wallet:', error);
       setStatus({ type: 'error', message: error?.message ?? 'Failed to connect wallet.' });
@@ -212,6 +228,13 @@ const TransactionPage = () => {
       setShowSummary(true);
       setRecipient('');
       setAmount('');
+      localStorage.setItem("lastTransaction", JSON.stringify({
+  wallet: sanitizeWalletLabel(selectedWallet),
+  from: walletAddress,
+  to: recipient.trim(),
+  amount: numericAmount,
+  hash
+}));
       setStatus({ type: 'success', message: 'Transaction submitted successfully!' });
     } catch (error) {
       console.error('Transaction failed:', error);
@@ -344,6 +367,19 @@ const TransactionPage = () => {
                     <div className="wallet-info">
                       <strong>Connected ({sanitizeWalletLabel(selectedWallet)})</strong>
                       <div className="wallet-address">{walletAddress}</div>
+
+                                    {/* Display Balance */}
+                  <div style={{ marginTop: '6px', fontWeight: 500 }}>
+                    Balance: {walletBalance.toFixed(6)} ADA
+                  </div>
+
+                        <button
+      className="action-button"
+      style={{ marginTop: '6px', backgroundColor: '#38a169' }}
+      onClick={() => navigator.clipboard.writeText(walletAddress)}
+    >
+      Copy Address
+    </button>
                     </div>
                   )}
 
@@ -385,6 +421,27 @@ const TransactionPage = () => {
                     onChange={(event) => setAmount(event.target.value)}
                     disabled={isBusy}
                   />
+
+                                  
+                  {walletApi && (
+                    <button
+                      className="action-button"
+                      style={{ marginTop: '8px', backgroundColor: '#3182ce' }}
+                      onClick={async () => {
+                        const utxosHex = await walletApi.getUtxos();
+                        const utxos = parseUtxos(utxosHex);
+                        let totalLovelace = BigNum.from_str('0');
+                        utxos.forEach((utxo) => {
+                          totalLovelace = totalLovelace.checked_add(utxo.output().amount().coin());
+                        });
+                        const maxAda = Number(totalLovelace.to_str()) / 1_000_000;
+                        setAmount(maxAda.toFixed(6));
+                      }}
+                      disabled={isBusy}
+                    >
+                      Send Max
+                    </button>
+                  )}
 
                   <button className="action-button" onClick={handleSendAda} disabled={isBusy}>
                     {isBusy ? 'Processing…' : 'Send Transaction'}
