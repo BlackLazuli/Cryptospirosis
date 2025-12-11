@@ -10,6 +10,8 @@ import EditNotePage from './pages/EditNotePage';  // ✅ Import edit page
 import ViewNotePage from './pages/ViewNotePage';
 import TransactionPage from './pages/Transaction';
 import { authService } from './services/authService';
+import TransactionHistory from './pages/TransactionHistory';
+
 import './App.css';
 
 function App() {
@@ -92,12 +94,23 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+  path="/transaction-history"
+  element={
+    <ProtectedRoute>
+      <TransactionHistory />
+    </ProtectedRoute>
+  }
+/>
           
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </div>
     </Router>
+
+    
   );
 }
 
